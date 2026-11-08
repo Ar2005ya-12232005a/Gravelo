@@ -7,7 +7,49 @@ echo *.py[cod]
 echo *.egg-info/
 echo build/
 echo dist/
-echo venv/
+echo venv/a.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+venv/
+.venv/
+env/
+
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+postgres_data/
+redis_data/
+minio_data/
+data/
+
+*.pt
+*.onnx
+*.pth
+*.engine
+models_weights/
+
+*.log
+logs/
+
+celerybeat-schedule
+celerybeat.pid
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+practice.py
 echo .venv/
 echo env/
 echo .pytest_cache/
