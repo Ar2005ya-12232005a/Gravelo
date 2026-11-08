@@ -1,0 +1,35 @@
+(
+echo .env
+echo .env.*
+echo !.env.example
+echo __pycache__/
+echo *.py[cod]
+echo *.egg-info/
+echo build/
+echo dist/
+echo venv/
+echo .venv/
+echo env/
+echo .pytest_cache/
+echo .coverage
+echo htmlcov/
+echo .mypy_cache/
+echo .ruff_cache/
+echo postgres_data/
+echo redis_data/
+echo minio_data/
+echo data/
+echo *.pt
+echo *.onnx
+echo *.pth
+echo *.engine
+echo models_weights/
+echo *.log
+echo logs/
+echo celerybeat-schedule
+echo celerybeat.pid
+echo .vscode/
+echo .idea/
+echo .DS_Store
+echo Thumbs.db
+) > .gitignore
