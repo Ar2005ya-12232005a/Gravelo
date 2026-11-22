@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+.env.*
+
+# Keep example environment file
+!.env.example
+
+# Uploaded images
+uploads/*
+!uploads/.gitkeep
+
+# YOLO model weights
+*.pt
+*.onnx
+*.engine
+
+# Testing
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
