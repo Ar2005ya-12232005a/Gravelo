@@ -17,16 +17,20 @@ import {
   CheckCircle2,
   Ruler,
   Building2,
+  User,
 } from 'lucide-react';
 
-// Generates a clean road-surface SVG preview with detection circles for mock scans
-const createMockRoadPreview = (circles) => {
+const createMockRoadPreview = (circles, strokeColor = '#ef4444', showLabels = true) => {
   const circleMarkup = circles
     .map(
       (c) => `
-      <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="3" />
-      <circle cx="${c.x}" cy="${c.y}" r="4" fill="#ef4444" />
-      <text x="${c.x + c.r + 6}" y="${c.y + 4}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold">${c.label}</text>
+      <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="${strokeColor}38" stroke="${strokeColor}" stroke-width="3" />
+      <circle cx="${c.x}" cy="${c.y}" r="4" fill="${strokeColor}" />
+      ${
+        showLabels
+          ? `<text x="${c.x + c.r + 6}" y="${c.y + 4}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold">${c.label}</text>`
+          : ''
+      }
     `
     )
     .join('');
@@ -44,7 +48,7 @@ const createMockRoadPreview = (circles) => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
-const MOCK_SCANS = [
+const INITIAL_SCANS = [
   {
     id: 'SCN-1042',
     roadSegment: 'NH-46 Bhopal–Indore Highway, Km 18.4',
@@ -58,11 +62,11 @@ const MOCK_SCANS = [
     authority: 'NHAI Regional Office, Bhopal',
     contactPhone: '+91-755-2426638',
     contactEmail: 'robhopal@nhai.org',
-    imageUrl: createMockRoadPreview([
+    circleData: [
       { x: 235, y: 175, r: 34, label: 'Pothole (9.4 cm)' },
       { x: 355, y: 225, r: 26, label: 'Pothole (6.8 cm)' },
       { x: 270, y: 115, r: 20, label: 'Crack' },
-    ]),
+    ],
     markers: [],
   },
   {
@@ -78,10 +82,10 @@ const MOCK_SCANS = [
     authority: 'PWD Sehore Division (Sub-Division Ashta)',
     contactPhone: '+91-7562-226041',
     contactEmail: 'eepwdsehore@mp.gov.in',
-    imageUrl: createMockRoadPreview([
+    circleData: [
       { x: 220, y: 190, r: 38, label: 'Alligator Crack (3.6 cm)' },
       { x: 375, y: 145, r: 24, label: 'Surface Wear' },
-    ]),
+    ],
     markers: [],
   },
   {
@@ -97,10 +101,10 @@ const MOCK_SCANS = [
     authority: 'MPRDC Divisional Office, Sehore',
     contactPhone: '+91-7562-224510',
     contactEmail: 'dm.sehore@mprdc.gov.in',
-    imageUrl: createMockRoadPreview([
+    circleData: [
       { x: 310, y: 200, r: 44, label: 'Rutting / Water (7.8 cm)' },
       { x: 195, y: 140, r: 22, label: 'Edge Break' },
-    ]),
+    ],
     markers: [],
   },
   {
@@ -116,34 +120,68 @@ const MOCK_SCANS = [
     authority: 'PWD Sehore Division (Sub-Division Ashta)',
     contactPhone: '+91-7562-226041',
     contactEmail: 'eepwdsehore@mp.gov.in',
-    imageUrl: createMockRoadPreview([
-      { x: 410, y: 195, r: 28, label: 'Edge Crack (1.8 cm)' },
-    ]),
+    circleData: [{ x: 410, y: 195, r: 28, label: 'Edge Crack (1.8 cm)' }],
     markers: [],
   },
 ];
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [scans, setScans] = useState(MOCK_SCANS);
-  const [selectedScan, setSelectedScan] = useState(null);
+  const [scans, setScans] = useState(INITIAL_SCANS);
+  const [selectedScanId, setSelectedScanId] = useState(null);
   const [toastMsg, setToastMsg] = useState('');
 
+  // Settings state
+  const [darkmode, setDarkmode] = useState(false);
+  const [circleHex, setCircleHex] = useState('#ef4444');
+  const [highlightHex, setHighlightHex] = useState('#2563eb');
+  const [showCircleLabels, setShowCircleLabels] = useState(true);
+  const [severityFilter, setSeverityFilter] = useState('All');
+  const [toastAlerts, setToastAlerts] = useState(true);
+  const [highSeverityAlerts, setHighSeverityAlerts] = useState(true);
+
+  const settingsPrefs = {
+    darkmode,
+    circleHex,
+    highlightHex,
+    showCircleLabels,
+    severityFilter,
+    toastAlerts,
+    highSeverityAlerts,
+  };
+
+  const settingsSetters = {
+    setDarkmode,
+    setCircleHex,
+    setHighlightHex,
+    setShowCircleLabels,
+    setSeverityFilter,
+    setToastAlerts,
+    setHighSeverityAlerts,
+  };
+
   const showToast = (msg) => {
+    if (!toastAlerts) return;
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 2500);
+  };
+
+  const getScanImage = (scan) => {
+    if (scan.uploadedUrl) return scan.uploadedUrl;
+    return createMockRoadPreview(scan.circleData || [], circleHex, showCircleLabels);
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const uploadedPreviewUrl = URL.createObjectURL(file);
+    const uploadedUrl = URL.createObjectURL(file);
+    const id = `SCN-${1043 + scans.length}`;
 
     const newScan = {
-      id: SCN - `${1043 + scans.length}`,
+      id,
       roadSegment: `Uploaded Image: ${file.name}`,
-      date: '22 Nov 2026',
+      date: '23 Nov 2026',
       defectType: 'Pothole & Transverse Crack (Preview)',
       severity: 'High',
       estimatedDepth: '8.1 cm',
@@ -153,8 +191,7 @@ function App() {
       authority: 'PWD Sehore Division (Sub-Division Ashta)',
       contactPhone: '+91-7562-226041',
       contactEmail: 'eepwdsehore@mp.gov.in',
-      imageUrl: uploadedPreviewUrl,
-      // Percentage coordinates overlaid on the uploaded photo until FastAPI returns real boxes/circles
+      uploadedUrl,
       markers: [
         { top: '54%', left: '42%', size: 68, label: '8.1 cm' },
         { top: '66%', left: '63%', size: 48, label: '4.2 cm' },
@@ -162,7 +199,7 @@ function App() {
     };
 
     setScans([newScan, ...scans]);
-    setSelectedScan(newScan);
+    setSelectedScanId(id);
     showToast(`Marked defects on "${file.name}"`);
   };
 
@@ -170,7 +207,7 @@ function App() {
     const sampleScan = {
       id: `SCN-${1043 + scans.length}`,
       roadSegment: 'Sample Capture: Kothri Kalan Main Gate Stretch',
-      date: '22 Nov 2026',
+      date: '23 Nov 2026',
       defectType: 'Transverse Pavement Crack',
       severity: 'Medium',
       estimatedDepth: '4.1 cm',
@@ -180,10 +217,10 @@ function App() {
       authority: 'PWD Sehore Division (Sub-Division Ashta)',
       contactPhone: '+91-7562-226041',
       contactEmail: 'eepwdsehore@mp.gov.in',
-      imageUrl: createMockRoadPreview([
+      circleData: [
         { x: 260, y: 185, r: 32, label: 'Crack (4.1 cm)' },
         { x: 365, y: 135, r: 22, label: 'Crack (2.3 cm)' },
-      ]),
+      ],
       markers: [],
     };
     setScans([sampleScan, ...scans]);
@@ -209,22 +246,44 @@ function App() {
     return 'bg-emerald-100 text-emerald-700 border-emerald-200';
   };
 
+  const visibleScans =
+    severityFilter === 'High' ? scans.filter((s) => s.severity === 'High') : scans;
+
+  const selectedScan = scans.find((s) => s.id === selectedScanId) || null;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex text-gray-900">
+    <div
+      className={`min-h-screen flex ${
+        darkmode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
+      }`}
+    >
       {/* Left Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 p-5 flex flex-col justify-between shrink-0">
+      <aside
+        className={`w-64 border-r p-5 flex flex-col justify-between shrink-0 ${
+          darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+        }`}
+      >
         <div>
           <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
+            <div
+              style={{ backgroundColor: highlightHex }}
+              className="h-10 w-10 rounded-xl text-white flex items-center justify-center font-bold text-lg"
+            >
               G
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">Gravelo</h1>
-              <p className="text-xs text-gray-500">Road Defect AI</p>
+              <p className={`text-xs ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Road Defect AI
+              </p>
             </div>
           </div>
 
-          <label className="w-full mb-6 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition">
+          <label
+            className={`w-full mb-6 text-white text-sm font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition ${
+              darkmode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-900 hover:bg-gray-800'
+            }`}
+          >
             <Upload className="h-4 w-4" />
             <span>+ Upload Road Image</span>
             <input
@@ -243,10 +302,16 @@ function App() {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
-                    }`}
+                  style={isActive ? { color: highlightHex } : undefined}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
+                    isActive
+                      ? darkmode
+                        ? 'bg-gray-800'
+                        : 'bg-blue-50'
+                      : darkmode
+                      ? 'text-gray-300 hover:bg-gray-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
@@ -259,6 +324,22 @@ function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 p-8 max-w-6xl">
+        {/* Top-Right Profile Circle */}
+        <div className="flex justify-end mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            title="Settings"
+            className={`h-10 w-10 rounded-full border flex items-center justify-center transition ${
+              darkmode
+                ? 'bg-gray-900 border-gray-700 text-gray-200 hover:bg-gray-800'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <User className="h-5 w-5" />
+          </button>
+        </div>
+
         {/* Toast notification */}
         {toastMsg && (
           <div className="fixed bottom-5 right-5 bg-gray-900 text-white text-sm px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2 z-50">
@@ -276,33 +357,66 @@ function App() {
           />
         )}
 
+        {/* Detected Defects Tab */}
+        {activeTab === 'detections' && <DetectedDefects scans={visibleScans} />}
+
+        {/* Inspection Reports Tab */}
+        {activeTab === 'reports' && <InspectionReports scans={visibleScans} />}
+
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <>
             {/* Welcome Banner */}
-            <div className="bg-gray-200/80 p-5 rounded-xl flex justify-between items-center mb-8">
+            <div
+              className={`p-5 rounded-xl flex flex-wrap justify-between items-center gap-3 mb-8 ${
+                darkmode ? 'bg-gray-900 border border-gray-800' : 'bg-gray-200/80'
+              }`}
+            >
               <div>
                 <h2 className="text-lg font-bold">Welcome Back, Pavement Inspection Team</h2>
-                <p className="text-sm text-gray-700">
+                <p className={`text-sm ${darkmode ? 'text-gray-300' : 'text-gray-700'}`}>
                   AI-Driven Defect Localization, Depth Estimation &amp; Authority Dispatch
                 </p>
               </div>
+              {highSeverityAlerts && scans.some((s) => s.severity === 'High') && (
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                  {scans.filter((s) => s.severity === 'High').length} High-Severity Alerts
+                </span>
+              )}
             </div>
 
             {/* Summary Metrics Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs text-gray-500 font-medium">Total Road Images Scanned</p>
+              <div
+                className={`rounded-xl p-4 border ${
+                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                }`}
+              >
+                <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Total Road Images Scanned
+                </p>
                 <p className="text-2xl font-bold mt-1">{scans.length}</p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs text-gray-500 font-medium">Circled Defects Flagged</p>
+              <div
+                className={`rounded-xl p-4 border ${
+                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                }`}
+              >
+                <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Circled Defects Flagged
+                </p>
                 <p className="text-2xl font-bold mt-1">
                   {scans.reduce((acc, item) => acc + item.count, 0)}
                 </p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs text-gray-500 font-medium">High-Severity Alerts</p>
+              <div
+                className={`rounded-xl p-4 border ${
+                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                }`}
+              >
+                <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  High-Severity Alerts
+                </p>
                 <p className="text-2xl font-bold text-red-600 mt-1">
                   {scans.filter((s) => s.severity === 'High').length}
                 </p>
@@ -312,10 +426,16 @@ function App() {
             {/* Action Cards */}
             <h3 className="text-xl font-bold mb-4">Dashboard</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-              <label className="bg-gray-100 hover:bg-gray-200/70 border border-gray-300 rounded-xl p-5 flex flex-col gap-2 cursor-pointer transition">
+              <label
+                className={`border rounded-xl p-5 flex flex-col gap-2 cursor-pointer transition ${
+                  darkmode
+                    ? 'bg-gray-900 hover:bg-gray-800/80 border-gray-800'
+                    : 'bg-gray-100 hover:bg-gray-200/70 border-gray-300'
+                }`}
+              >
                 <Camera className="p-2.5 text-blue-600 bg-blue-100 rounded-lg h-11 w-11" />
                 <h4 className="font-bold text-base mt-1">Upload Road Picture</h4>
-                <p className="text-sm text-gray-700">
+                <p className={`text-sm ${darkmode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Upload a road surface photo to highlight defects with circles, estimate depth, and notify local authorities.
                 </p>
                 <input
@@ -328,11 +448,15 @@ function App() {
 
               <button
                 onClick={handleRunSample}
-                className="text-left bg-gray-100 hover:bg-gray-200/70 border border-gray-300 rounded-xl p-5 flex flex-col gap-2 transition"
+                className={`text-left border rounded-xl p-5 flex flex-col gap-2 transition ${
+                  darkmode
+                    ? 'bg-gray-900 hover:bg-gray-800/80 border-gray-800'
+                    : 'bg-gray-100 hover:bg-gray-200/70 border-gray-300'
+                }`}
               >
                 <PlayCircle className="p-2.5 text-blue-600 bg-blue-100 rounded-lg h-11 w-11" />
                 <h4 className="font-bold text-base mt-1">Run Sample Road Detection</h4>
-                <p className="text-sm text-gray-700">
+                <p className={`text-sm ${darkmode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Simulate detection circles, severity scoring, and depth calculation on a sample road image.
                 </p>
               </button>
@@ -342,33 +466,40 @@ function App() {
             <div>
               <h3 className="font-bold text-xl mb-4">Previously Scanned Road Segments</h3>
 
-              {scans.length === 0 ? (
-                <div className="p-8 flex flex-col gap-3 items-center bg-gray-200/70 rounded-2xl">
+              {visibleScans.length === 0 ? (
+                <div
+                  className={`p-8 flex flex-col gap-3 items-center rounded-2xl ${
+                    darkmode ? 'bg-gray-900' : 'bg-gray-200/70'
+                  }`}
+                >
                   <ShieldAlert className="h-10 w-10 text-blue-600" />
-                  <p className="font-medium">No road images scanned yet.</p>
+                  <p className="font-medium">No matching road scans to display.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {scans.map((scan) => (
+                  {visibleScans.map((scan) => (
                     <div
                       key={scan.id}
-                      className="p-5 bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col justify-between"
+                      className={`p-5 rounded-xl border shadow-xs flex flex-col justify-between ${
+                        darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                      }`}
                     >
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
                             {scan.id}
                           </span>
-                          <span className="text-xs text-gray-500">{scan.date}</span>
+                          <span className={`text-xs ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {scan.date}
+                          </span>
                         </div>
 
-                        {/* Annotated Image Thumbnail with Defect Circles */}
                         <div
-                          onClick={() => setSelectedScan(scan)}
-                          className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-900 border border-gray-200 cursor-pointer group"
+                          onClick={() => setSelectedScanId(scan.id)}
+                          className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-900 border border-gray-700 cursor-pointer group"
                         >
                           <img
-                            src={scan.imageUrl}
+                            src={getScanImage(scan)}
                             alt={scan.defectType}
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                           />
@@ -380,12 +511,19 @@ function App() {
                                 left: m.left,
                                 width: `${m.size}px`,
                                 height: `${m.size}px`,
+                                borderColor: circleHex,
+                                backgroundColor: `${circleHex}38`,
                               }}
-                              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-3 border-red-500 bg-red-500/20 flex items-end justify-center"
+                              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex items-end justify-center"
                             >
-                              <span className="translate-y-5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                                {m.label}
-                              </span>
+                              {showCircleLabels && (
+                                <span
+                                  style={{ backgroundColor: circleHex }}
+                                  className="translate-y-5 text-white text-[10px] font-bold px-1.5 py-0.5 rounded"
+                                >
+                                  {m.label}
+                                </span>
+                              )}
                             </div>
                           ))}
                           <span className="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] px-2 py-0.5 rounded">
@@ -394,12 +532,11 @@ function App() {
                         </div>
 
                         <h4 className="mt-3 font-bold text-base">{scan.defectType}</h4>
-                        <p className="mt-1 text-xs text-gray-600 flex items-center gap-1">
+                        <p className={`mt-1 text-xs flex items-center gap-1 ${darkmode ? 'text-gray-300' : 'text-gray-600'}`}>
                           <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                           <span>{scan.roadSegment}</span>
                         </p>
 
-                        {/* Severity + Depth Row */}
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                           <span
                             className={`px-2.5 py-0.5 rounded-full border font-medium ${severityBadge(
@@ -417,13 +554,16 @@ function App() {
                           </span>
                         </div>
 
-                        {/* Responsible Authority Preview */}
-                        <div className="mt-3 pt-2.5 border-t border-gray-100 text-xs text-gray-600 flex items-center justify-between">
+                        <div
+                          className={`mt-3 pt-2.5 border-t text-xs flex items-center justify-between ${
+                            darkmode ? 'border-gray-800 text-gray-300' : 'border-gray-100 text-gray-600'
+                          }`}
+                        >
                           <span className="flex items-center gap-1.5 truncate">
                             <Building2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                             <span className="truncate">{scan.authority}</span>
                           </span>
-                          <span className="font-medium text-gray-800 shrink-0 ml-2">
+                          <span className="font-medium shrink-0 ml-2">
                             {scan.contactPhone}
                           </span>
                         </div>
@@ -432,14 +572,19 @@ function App() {
                       <div className="flex gap-3 w-full mt-4">
                         <button
                           onClick={() => copyReportSummary(scan)}
-                          className="w-full py-2 px-3 rounded-lg border border-gray-300 text-xs font-medium hover:bg-gray-50 flex items-center justify-center gap-1.5"
+                          className={`w-full py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 ${
+                            darkmode
+                              ? 'border-gray-700 hover:bg-gray-800'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
                         >
                           <Copy className="h-3.5 w-3.5" />
                           <span>Copy Summary</span>
                         </button>
                         <button
-                          onClick={() => setSelectedScan(scan)}
-                          className="w-full py-2 px-3 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 flex items-center justify-center gap-1.5"
+                          onClick={() => setSelectedScanId(scan.id)}
+                          style={{ backgroundColor: highlightHex }}
+                          className="w-full py-2 px-3 rounded-lg text-white text-xs font-medium hover:opacity-90 flex items-center justify-center gap-1.5"
                         >
                           <span>View Detail</span>
                           <ArrowRight className="h-3.5 w-3.5" />
@@ -451,27 +596,30 @@ function App() {
               )}
             </div>
 
-            {/* Detail Modal with Circled Output Image, Depth & Authority Contact (Phone + Email) */}
+            {/* Detail Modal */}
             {selectedScan && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl">
+                <div
+                  className={`rounded-xl max-w-lg w-full p-6 shadow-xl ${
+                    darkmode ? 'bg-gray-900 text-gray-100 border border-gray-800' : 'bg-white text-gray-900'
+                  }`}
+                >
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-xs font-semibold text-blue-600">{selectedScan.id}</span>
                       <h4 className="text-lg font-bold mt-0.5">{selectedScan.defectType}</h4>
                     </div>
                     <button
-                      onClick={() => setSelectedScan(null)}
-                      className="text-gray-400 hover:text-gray-700 text-sm font-bold"
+                      onClick={() => setSelectedScanId(null)}
+                      className="text-gray-400 hover:text-gray-200 text-sm font-bold"
                     >
                       ✕
                     </button>
                   </div>
 
-                  {/* Circled Output Preview */}
-                  <div className="relative w-full h-52 mt-3 rounded-lg overflow-hidden bg-gray-900 border border-gray-200">
+                  <div className="relative w-full h-52 mt-3 rounded-lg overflow-hidden bg-gray-900 border border-gray-700">
                     <img
-                      src={selectedScan.imageUrl}
+                      src={getScanImage(selectedScan)}
                       alt={selectedScan.defectType}
                       className="w-full h-full object-cover"
                     />
@@ -483,17 +631,30 @@ function App() {
                           left: m.left,
                           width: `${m.size}px`,
                           height: `${m.size}px`,
+                          borderColor: circleHex,
+                          backgroundColor: `${circleHex}38`,
                         }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-3 border-red-500 bg-red-500/20 flex items-end justify-center"
+                        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex items-end justify-center"
                       >
-                        <span className="translate-y-5 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                          {m.label}
-                        </span>
+                        {showCircleLabels && (
+                          <span
+                            style={{ backgroundColor: circleHex }}
+                            className="translate-y-5 text-white text-[10px] font-bold px-1.5 py-0.5 rounded"
+                          >
+                            {m.label}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2.5 text-sm text-gray-700 bg-gray-50 p-3.5 rounded-lg border border-gray-200">
+                  <div
+                    className={`mt-4 grid grid-cols-2 gap-2.5 text-sm p-3.5 rounded-lg border ${
+                      darkmode
+                        ? 'bg-gray-950 border-gray-800 text-gray-200'
+                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                    }`}
+                  >
                     <p className="col-span-2">
                       <span className="font-semibold">Location:</span> {selectedScan.roadSegment}
                     </p>
@@ -511,9 +672,14 @@ function App() {
                     </p>
                   </div>
 
-                  {/* Responsible Road Authority Contact Block */}
-                  <div className="mt-3 p-3.5 rounded-lg border border-blue-100 bg-blue-50/60 text-xs text-gray-800 space-y-1">
-                    <p className="font-bold text-blue-900 flex items-center gap-1.5">
+                  <div
+                    className={`mt-3 p-3.5 rounded-lg border text-xs space-y-1 ${
+                      darkmode
+                        ? 'border-blue-900 bg-blue-950/50 text-gray-200'
+                        : 'border-blue-100 bg-blue-50/60 text-gray-800'
+                    }`}
+                  >
+                    <p className={`font-bold flex items-center gap-1.5 ${darkmode ? 'text-blue-300' : 'text-blue-900'}`}>
                       <Building2 className="h-4 w-4" />
                       <span>Responsible Authority: {selectedScan.authority}</span>
                     </p>
@@ -537,14 +703,17 @@ function App() {
                       href={`mailto:${selectedScan.contactEmail}?subject=Road Defect Alert ${selectedScan.id}&body=${encodeURIComponent(
                         `${selectedScan.defectType} detected at ${selectedScan.roadSegment}.\nSeverity: ${selectedScan.severity}\nEstimated Depth: ${selectedScan.estimatedDepth}\nCircled Defects: ${selectedScan.count}`
                       )}`}
-                      className="px-3.5 py-2 rounded-lg border border-gray-300 text-xs font-medium flex items-center gap-1.5 hover:bg-gray-50"
+                      className={`px-3.5 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 ${
+                        darkmode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'
+                      }`}
                     >
                       <Send className="h-3.5 w-3.5" />
                       <span>Email Alert</span>
                     </a>
                     <button
-                      onClick={() => setSelectedScan(null)}
-                      className="px-4 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium"
+                      onClick={() => setSelectedScanId(null)}
+                      style={{ backgroundColor: highlightHex }}
+                      className="px-4 py-2 rounded-lg text-white text-xs font-medium hover:opacity-90"
                     >
                       Close
                     </button>
@@ -552,8 +721,9 @@ function App() {
                 </div>
               </div>
             )}
-          </>)}
-          </main>
+          </>
+        )}
+      </main>
     </div>
   );
 }
