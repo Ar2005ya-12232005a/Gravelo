@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { GamesPage } from './components/Games';
 import { SettingsPage, DetectedDefects, InspectionReports } from './components';
 import {
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   Ruler,
   Building2,
   User,
+  Gamepad2,
 } from 'lucide-react';
 
 const createMockRoadPreview = (circles, strokeColor = '#ef4444', showLabels = true) => {
@@ -26,11 +28,10 @@ const createMockRoadPreview = (circles, strokeColor = '#ef4444', showLabels = tr
       (c) => `
       <circle cx="${c.x}" cy="${c.y}" r="${c.r}" fill="${strokeColor}38" stroke="${strokeColor}" stroke-width="3" />
       <circle cx="${c.x}" cy="${c.y}" r="4" fill="${strokeColor}" />
-      ${
-        showLabels
+      ${showLabels
           ? `<text x="${c.x + c.r + 6}" y="${c.y + 4}" fill="#ffffff" font-size="11" font-family="sans-serif" font-weight="bold">${c.label}</text>`
           : ''
-      }
+        }
     `
     )
     .join('');
@@ -237,6 +238,7 @@ function App() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'detections', label: 'Detected Defects', icon: AlertTriangle },
     { id: 'reports', label: 'Inspection Reports', icon: FileText },
+    { id: 'games', label: 'Daily games', icon: Gamepad2 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -253,15 +255,13 @@ function App() {
 
   return (
     <div
-      className={`min-h-screen flex ${
-        darkmode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
-      }`}
+      className={`min-h-screen flex ${darkmode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
+        }`}
     >
       {/* Left Sidebar */}
       <aside
-        className={`w-64 border-r p-5 flex flex-col justify-between shrink-0 ${
-          darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
-        }`}
+        className={`w-64 border-r p-5 flex flex-col justify-between shrink-0 ${darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+          }`}
       >
         <div>
           <div className="flex items-center gap-3 mb-6">
@@ -280,9 +280,8 @@ function App() {
           </div>
 
           <label
-            className={`w-full mb-6 text-white text-sm font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition ${
-              darkmode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-900 hover:bg-gray-800'
-            }`}
+            className={`w-full mb-6 text-white text-sm font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 cursor-pointer transition ${darkmode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-gray-900 hover:bg-gray-800'
+              }`}
           >
             <Upload className="h-4 w-4" />
             <span>+ Upload Road Image</span>
@@ -303,15 +302,14 @@ function App() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   style={isActive ? { color: highlightHex } : undefined}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${
-                    isActive
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition ${isActive
                       ? darkmode
                         ? 'bg-gray-800'
                         : 'bg-blue-50'
                       : darkmode
-                      ? 'text-gray-300 hover:bg-gray-800'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                        ? 'text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
@@ -330,11 +328,10 @@ function App() {
             type="button"
             onClick={() => setActiveTab('settings')}
             title="Settings"
-            className={`h-10 w-10 rounded-full border flex items-center justify-center transition ${
-              darkmode
+            className={`h-10 w-10 rounded-full border flex items-center justify-center transition ${darkmode
                 ? 'bg-gray-900 border-gray-700 text-gray-200 hover:bg-gray-800'
                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
+              }`}
           >
             <User className="h-5 w-5" />
           </button>
@@ -363,14 +360,16 @@ function App() {
         {/* Inspection Reports Tab */}
         {activeTab === 'reports' && <InspectionReports scans={visibleScans} />}
 
+        {/* Games Tab */}
+        {activeTab === 'games' && <GamesPage darkmode={darkmode} />}
+
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <>
             {/* Welcome Banner */}
             <div
-              className={`p-5 rounded-xl flex flex-wrap justify-between items-center gap-3 mb-8 ${
-                darkmode ? 'bg-gray-900 border border-gray-800' : 'bg-gray-200/80'
-              }`}
+              className={`p-5 rounded-xl flex flex-wrap justify-between items-center gap-3 mb-8 ${darkmode ? 'bg-gray-900 border border-gray-800' : 'bg-gray-200/80'
+                }`}
             >
               <div>
                 <h2 className="text-lg font-bold">Welcome Back, Pavement Inspection Team</h2>
@@ -388,9 +387,8 @@ function App() {
             {/* Summary Metrics Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <div
-                className={`rounded-xl p-4 border ${
-                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
-                }`}
+                className={`rounded-xl p-4 border ${darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                  }`}
               >
                 <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Total Road Images Scanned
@@ -398,9 +396,8 @@ function App() {
                 <p className="text-2xl font-bold mt-1">{scans.length}</p>
               </div>
               <div
-                className={`rounded-xl p-4 border ${
-                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
-                }`}
+                className={`rounded-xl p-4 border ${darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                  }`}
               >
                 <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Circled Defects Flagged
@@ -410,9 +407,8 @@ function App() {
                 </p>
               </div>
               <div
-                className={`rounded-xl p-4 border ${
-                  darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
-                }`}
+                className={`rounded-xl p-4 border ${darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                  }`}
               >
                 <p className={`text-xs font-medium ${darkmode ? 'text-gray-400' : 'text-gray-500'}`}>
                   High-Severity Alerts
@@ -427,11 +423,10 @@ function App() {
             <h3 className="text-xl font-bold mb-4">Dashboard</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
               <label
-                className={`border rounded-xl p-5 flex flex-col gap-2 cursor-pointer transition ${
-                  darkmode
+                className={`border rounded-xl p-5 flex flex-col gap-2 cursor-pointer transition ${darkmode
                     ? 'bg-gray-900 hover:bg-gray-800/80 border-gray-800'
                     : 'bg-gray-100 hover:bg-gray-200/70 border-gray-300'
-                }`}
+                  }`}
               >
                 <Camera className="p-2.5 text-blue-600 bg-blue-100 rounded-lg h-11 w-11" />
                 <h4 className="font-bold text-base mt-1">Upload Road Picture</h4>
@@ -448,11 +443,10 @@ function App() {
 
               <button
                 onClick={handleRunSample}
-                className={`text-left border rounded-xl p-5 flex flex-col gap-2 transition ${
-                  darkmode
+                className={`text-left border rounded-xl p-5 flex flex-col gap-2 transition ${darkmode
                     ? 'bg-gray-900 hover:bg-gray-800/80 border-gray-800'
                     : 'bg-gray-100 hover:bg-gray-200/70 border-gray-300'
-                }`}
+                  }`}
               >
                 <PlayCircle className="p-2.5 text-blue-600 bg-blue-100 rounded-lg h-11 w-11" />
                 <h4 className="font-bold text-base mt-1">Run Sample Road Detection</h4>
@@ -468,9 +462,8 @@ function App() {
 
               {visibleScans.length === 0 ? (
                 <div
-                  className={`p-8 flex flex-col gap-3 items-center rounded-2xl ${
-                    darkmode ? 'bg-gray-900' : 'bg-gray-200/70'
-                  }`}
+                  className={`p-8 flex flex-col gap-3 items-center rounded-2xl ${darkmode ? 'bg-gray-900' : 'bg-gray-200/70'
+                    }`}
                 >
                   <ShieldAlert className="h-10 w-10 text-blue-600" />
                   <p className="font-medium">No matching road scans to display.</p>
@@ -480,9 +473,8 @@ function App() {
                   {visibleScans.map((scan) => (
                     <div
                       key={scan.id}
-                      className={`p-5 rounded-xl border shadow-xs flex flex-col justify-between ${
-                        darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
-                      }`}
+                      className={`p-5 rounded-xl border shadow-xs flex flex-col justify-between ${darkmode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
+                        }`}
                     >
                       <div>
                         <div className="flex items-center justify-between mb-3">
@@ -555,9 +547,8 @@ function App() {
                         </div>
 
                         <div
-                          className={`mt-3 pt-2.5 border-t text-xs flex items-center justify-between ${
-                            darkmode ? 'border-gray-800 text-gray-300' : 'border-gray-100 text-gray-600'
-                          }`}
+                          className={`mt-3 pt-2.5 border-t text-xs flex items-center justify-between ${darkmode ? 'border-gray-800 text-gray-300' : 'border-gray-100 text-gray-600'
+                            }`}
                         >
                           <span className="flex items-center gap-1.5 truncate">
                             <Building2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -572,11 +563,10 @@ function App() {
                       <div className="flex gap-3 w-full mt-4">
                         <button
                           onClick={() => copyReportSummary(scan)}
-                          className={`w-full py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 ${
-                            darkmode
+                          className={`w-full py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 ${darkmode
                               ? 'border-gray-700 hover:bg-gray-800'
                               : 'border-gray-300 hover:bg-gray-50'
-                          }`}
+                            }`}
                         >
                           <Copy className="h-3.5 w-3.5" />
                           <span>Copy Summary</span>
@@ -600,9 +590,8 @@ function App() {
             {selectedScan && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <div
-                  className={`rounded-xl max-w-lg w-full p-6 shadow-xl ${
-                    darkmode ? 'bg-gray-900 text-gray-100 border border-gray-800' : 'bg-white text-gray-900'
-                  }`}
+                  className={`rounded-xl max-w-lg w-full p-6 shadow-xl ${darkmode ? 'bg-gray-900 text-gray-100 border border-gray-800' : 'bg-white text-gray-900'
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -649,11 +638,10 @@ function App() {
                   </div>
 
                   <div
-                    className={`mt-4 grid grid-cols-2 gap-2.5 text-sm p-3.5 rounded-lg border ${
-                      darkmode
+                    className={`mt-4 grid grid-cols-2 gap-2.5 text-sm p-3.5 rounded-lg border ${darkmode
                         ? 'bg-gray-950 border-gray-800 text-gray-200'
                         : 'bg-gray-50 border-gray-200 text-gray-700'
-                    }`}
+                      }`}
                   >
                     <p className="col-span-2">
                       <span className="font-semibold">Location:</span> {selectedScan.roadSegment}
@@ -673,11 +661,10 @@ function App() {
                   </div>
 
                   <div
-                    className={`mt-3 p-3.5 rounded-lg border text-xs space-y-1 ${
-                      darkmode
+                    className={`mt-3 p-3.5 rounded-lg border text-xs space-y-1 ${darkmode
                         ? 'border-blue-900 bg-blue-950/50 text-gray-200'
                         : 'border-blue-100 bg-blue-50/60 text-gray-800'
-                    }`}
+                      }`}
                   >
                     <p className={`font-bold flex items-center gap-1.5 ${darkmode ? 'text-blue-300' : 'text-blue-900'}`}>
                       <Building2 className="h-4 w-4" />
@@ -703,9 +690,8 @@ function App() {
                       href={`mailto:${selectedScan.contactEmail}?subject=Road Defect Alert ${selectedScan.id}&body=${encodeURIComponent(
                         `${selectedScan.defectType} detected at ${selectedScan.roadSegment}.\nSeverity: ${selectedScan.severity}\nEstimated Depth: ${selectedScan.estimatedDepth}\nCircled Defects: ${selectedScan.count}`
                       )}`}
-                      className={`px-3.5 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 ${
-                        darkmode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`px-3.5 py-2 rounded-lg border text-xs font-medium flex items-center gap-1.5 ${darkmode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       <Send className="h-3.5 w-3.5" />
                       <span>Email Alert</span>
